@@ -12,10 +12,7 @@ def login(request):
       user = authenticate(request, username=request.POST['user'], password=request.POST['password'])
       if user:
             dj_login(request, user)
-            if Customer.objects.filter(user=user).exists():
-                return HttpResponseRedirect(reverse('banking_app:index'))
-            else:
-                return HttpResponseRedirect(reverse('banking_app:employee'))
+            return HttpResponseRedirect(reverse('banking_app:index'))
       else:
             context = {
                'error': 'Bad username or password.'

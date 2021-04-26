@@ -4,21 +4,30 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
+from .utils import is_employee
 
-# Customer view
+
+# Customer and Employee view
 @login_required
 def index(request):
-    customer = get_object_or_404(Customer, user=request.user)
-    accounts = Account.objects.filter(customer=customer.pk)
-    context = {
-        'customer': customer,
-        'accounts': accounts
-     }
-    return render(request, 'banking_app/index.html', context)
+    if is_employee(request.user):
+        customers = Customer.objects.all()
+        accounts = Account.objects.all()
+        context = {'customers': customers, 'accounts': accounts}
+        return render(request, 'banking_app/employee.html', context)
+    else:
+        customer = get_object_or_404(Customer, user=request.user)
+        accounts = Account.objects.filter(customer=customer.pk)
+        context = {
+            'customer': customer,
+            'accounts': accounts
+        }
+        return render(request, 'banking_app/index.html', context)
 
 # Customer view - account activity
 @login_required
 def activity(request, account_id):
+    assert not is_employee(request.user)
     activities = Ledger.objects.filter(account=account_id)
     context = {
         'activities': activities,
@@ -28,6 +37,7 @@ def activity(request, account_id):
 # Customer view - transfering money
 @login_required
 def transfers(request, account_id):
+    assert not is_employee(request.user)
     currentAccount = get_object_or_404(Account, pk=account_id)
     allAccounts = Account.objects.exclude(pk=account_id)
     context = {
@@ -56,6 +66,7 @@ def transfers(request, account_id):
 # Customer view - taking a loan
 @login_required
 def add_loan(request, customer_id):
+    assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     customerAccounts = Account.objects.filter(customer=customer).filter(account_type='bank account')
     context = {
@@ -83,6 +94,7 @@ def add_loan(request, customer_id):
 # Customer view - paying off a loan
 @login_required
 def pay_loan(request, customer_id, account_id):
+    assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     account = get_object_or_404(Account, pk=account_id)
     customerAccounts = Account.objects.filter(customer=customer).filter(account_type='bank account')
@@ -124,18 +136,11 @@ def pay_loan(request, customer_id, account_id):
 
     return render(request, 'banking_app/pay_loan.html', context)
 
-# Employee view
-@login_required
-def employee(request):
-    customers = Customer.objects.all()
-    accounts = Account.objects.all()
-    context = {'customers': customers, 'accounts': accounts}
-
-    return render(request, 'banking_app/employee.html', context)
 
 # Employee view - adding a new customer
 @login_required
 def add_customer(request): 
+    assert is_employee(request.user)
     context = {}
 
     if request.method == 'POST':
@@ -165,6 +170,7 @@ def add_customer(request):
 # Employee view - editing a customer
 @login_required
 def edit_customer(request, customer_id):
+    assert is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     context = { 'customer': customer }
 
@@ -182,6 +188,7 @@ def edit_customer(request, customer_id):
 # Employee view - adding a new account
 @login_required
 def add_account(request):
+    assert is_employee(request.user)
     customers = Customer.objects.all()
     context = {'customers': customers}
 
