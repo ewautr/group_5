@@ -1,0 +1,17 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h1>Customers:</h1>
+<a href={% url 'banking_app:add_customer' %}>add customer</a>
+<ol>
+  {% for customer in customers %}
+  <li>Name: {{ customer.user }}, Phone: {{ customer.phone }}, Rank: {{ customer.rank }} <a href="{% url 'banking_app:edit_customer' customer_id=customer.pk%}">edit customer</a></li>
+  
+  {% endfor %}
+</ol>
+<h1>Accounts:</h1>
+<a href={% url 'banking_app:add_account' %}>add account</a>
+<ol>
+  {% for account in accounts %}
+  <li>Owner: {{ account.customer.user }}, Type: {{ account.account_type }}, Number: {{ account.pk }}</li>
+  {% endfor %}
+</ol>
+{% endblock %}

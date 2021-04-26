@@ -1,0 +1,17 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>Pay off your loan</h2>
+<form action={% url 'banking_app:pay_loan' customer_id=customer.pk account_id=account.pk %} method="POST">
+    {% csrf_token %}
+    <select name="fromAccount" id="fromAccount">
+        {% for account in customerAccounts %}
+        <option value={{ account.pk }}> {{ account.pk }} - {{ account.account_type }}</option>
+        {% endfor %}
+    </select>
+    <input type="number" name="amount" id="amount" placeholder="amount">
+    <button type="submit">make payment</button>
+</form>
+{% if error %}
+      <p><strong style="color: red;">Transfer unsuccesfull due to: {{ error }}</strong></p>
+{% endif %}
+<a href={% url 'banking_app:index' %}>go back</a>
+{% endblock %} 

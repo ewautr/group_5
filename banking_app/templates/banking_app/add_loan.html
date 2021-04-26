@@ -1,0 +1,19 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>Take a loan</h2>
+<h1>{{ customerAccounts }}</h1>
+<form action={% url 'banking_app:add_loan' customer_id=customer.pk %} method="POST">
+    {% csrf_token %}
+    <label for="toAccount">Choose your account:</label>
+    <select name="toAccount" id="toAccount">
+        {% for account in customerAccounts %}
+        <option value={{ account.pk }}> {{ account.pk }} - {{ account.account_type }}</option>
+        {% endfor %}
+    </select>
+    <label for="amount">how much?</label>
+    <input type="number" name="amount" id="amount" placeholder="amount">
+    <label for="text">what is the loan for?</label>
+    <input name="text" id="text" placeholder="reason...">
+    <button type="submit">take the loan</button>
+</form>
+<a href={% url 'banking_app:index' %}>go back</a>
+{% endblock %}

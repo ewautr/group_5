@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banking</title>
+  </head>
+  <body>
+    <h1>Private Banking</h1>
+    <p>
+      Welcome {{ user }} - <a href="{% url 'login_app:logout' %}">Log out</a> -
+      <a href="{% url 'login_app:delete_account' %}">Delete Account</a>
+    </p>
+    {% block content %} {% endblock %} {% block footer %} {% endblock %}
+  </body>
+</html>

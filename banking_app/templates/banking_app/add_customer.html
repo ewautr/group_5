@@ -1,0 +1,27 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>New Customer</h2>
+
+<form action={% url 'banking_app:add_customer' %} method="POST">
+    {% csrf_token %}
+  <input type="text" name="user_name" id="user_name" placeholder="username" />
+  <input type="email" name="email" id="email" placeholder="email" />
+  <input type="text" name="phone" id="phone" placeholder="phone" />
+  <input type="password" name="password" id="password" placeholder="password" />
+  <input
+    type="password"
+    name="confirmPassword"
+    id="confirmPassword"
+    placeholder="confirm password"
+  />
+  <label for="rank">Select Tier</label>
+  <select name="rank">
+    <option value="Basic">Basic</option>
+    <option value="Silver">Silver</option>
+    <option value="Gold">Gold</option>
+  </select>
+  <button type="submit" style="display: block; margin-top: 20px">
+    add customer
+  </button>
+</form>
+<a href={% url 'banking_app:employee' %}>go back</a>
+{% endblock %}

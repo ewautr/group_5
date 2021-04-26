@@ -1,0 +1,19 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>Edit Customer: {{ customer.user }}</h2>
+
+<form action={% url 'banking_app:edit_customer' customer_id=customer.pk %} method="POST">
+    {% csrf_token %}
+  <input type="text" name="user_name" id="user_name" placeholder="username" value={{ customer.user }}/>
+  <input type="text" name="phone" id="phone" placeholder="phone"  value={{ customer.phone }}/>
+  <label for="rank">Select Tier</label>
+  <select name="rank" >
+    <option value="Basic" {% if customer.rank == 'Basic' %} selected {% endif %}>Basic</option>
+    <option value="Silver" {% if customer.rank == 'Silver' %} selected {% endif %}>Silver</option>
+    <option value="Gold" {% if customer.rank == 'Gold' %} selected {% endif %}>Gold</option>
+  </select>
+  <button type="submit" style="display: block; margin-top: 20px">
+    edit customer
+  </button>
+</form>
+<a href={% url 'banking_app:employee' %}>go back</a>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>Account activity:</h2>
+<ol>
+  {% for activity in activities %}
+  <li style="display: flex; justify-content: space-between">
+    Transfer title: <span style="font-weight: bold; font-size: 20px;">{{ activity.text }}</span>
+    Amount: <span style="font-weight: bold; font-size: 20px;">{{ activity.amount }}</span>
+    Date: <span style="font-weight: bold; font-size: 20px;">{{ activity.timestamp }}</span>
+  </li>
+  <hr />
+  {% endfor %} 
+</ol>
+<a href={% url 'banking_app:index' %}>go back</a>
+{% endblock %}

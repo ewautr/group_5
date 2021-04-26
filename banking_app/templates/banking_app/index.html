@@ -1,0 +1,38 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<ul>
+  <h2>Your accounts:</h2>
+  <ol>
+    {% for account in accounts %} {% if account.account_type == 'bank account' %}
+    <li style="display: flex; justify-content: space-between">
+      account type:
+      <span style="font-size: 20px; font-weight: bold">{{ account.account_type }}</span>
+      account number::
+      <span style="font-size: 20px; font-weight: bold"> {{ account.pk }}</span>
+      available balance:
+      <span style="font-size: 20px; font-weight: bold">{{ account.balance }}</span><a href="{% url 'banking_app:activity' account_id=account.pk %}">view account activity</a>
+      <a href="{% url 'banking_app:transfers' account_id=account.pk %}">Make a transfer</a>
+    </li>
+    <hr />
+    {% endif %} {% endfor %}
+  </ol>
+
+  {% if customer.can_make_loan %}
+  <h2>Your loans:</h2>
+  <a href="{% url 'banking_app:add_loan' customer_id=customer.pk %}">make a loan</a>
+  <ol>
+    {% for account in accounts %} {% if account.account_type == 'Loan' %}
+    <li style="display: flex; justify-content: space-between">
+      account type:
+      <span style="font-size: 20px; font-weight: bold">{{ account.account_type }}</span>
+      account number:
+      <span style="font-size: 20px; font-weight: bold"> {{ account.pk }}</span>
+      loan balance:
+      <span style="font-size: 20px; font-weight: bold">{{ account.balance }}</span>
+      <a href="{% url 'banking_app:pay_loan' customer_id=customer.pk account_id=account.pk%}">Pay off loan</a>
+    </li>
+    <hr />
+    {% endif %} {% endfor %}
+  </ol>
+  {% endif %}
+</ul>
+{% endblock %}

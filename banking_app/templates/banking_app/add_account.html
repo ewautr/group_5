@@ -1,0 +1,19 @@
+{% extends 'banking_app/base.html' %} {% block content %}
+<h2>New Account</h2>
+
+<form action={% url 'banking_app:add_account' %} method="POST">
+    {% csrf_token %}
+  
+  <label for="customer">Select account owner</label>
+  <select name="customer">
+    {% for customer in customers %}
+    <option value={{ customer.pk }} >{{ customer.user }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="account_type" id="account_type" placeholder="account type" value="bank account"/>
+  <button type="submit" style="display: block; margin-top: 20px">
+    add account
+  </button>
+</form>
+<a href={% url 'banking_app:employee' %}>go back</a>
+{% endblock %}
