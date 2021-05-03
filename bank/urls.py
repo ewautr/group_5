@@ -23,4 +23,5 @@ urlpatterns = [
     path('api/v1/', include('api.urls')),
     path('api/v1/rest-auth/', include('rest_auth.urls')),
     path('api/v1/rest-auth/registration', include('rest_auth.registration.urls')),
+    path('chat/', include('chat.urls')),
 ]
