@@ -65,35 +65,32 @@ def transfers(request, account_id):
 
 # Customer view - transfering money
 @login_required
-def external_transfers(request, account_id):
-    pass
-    # assert not is_employee(request.user)
+def external_transfer(request, account_id):
+    assert not is_employee(request.user)
+    amount = request.POST['amount']
+    debit_account = request.POST['fromAccount']
+    bank_iban = request.POST['toBank']
+    credit_account = request.POST['toAccount']
+    text = request.POST['text']
+    available_balance = currentAccount.balance
 
-    # if request.method == 'POST':
-    #     amount = request.POST['amount']
-    #     debit_account = request.POST['fromAccount']
-    #     bank_iban = request.POST['toBank']
-    #     credit_account = request.POST['toAccount']
-    #     text = request.POST['text']
-    #     available_balance = currentAccount.balance
+        #proceed if the user has sufficient funds to make the transfer
+    if available_balance >= int(amount):
+            # http request with data for two new instances in the ledger table
+        response = request.get('https://www.somedomain.com/some/url/save')
 
-    #     #proceed if the user has sufficient funds to make the transfer
-    #     if available_balance >= int(amount):
-    #         # http request with data for two new instances in the ledger table
-    #         response = request.get('https://www.somedomain.com/some/url/save')
-
-    #         # make an instance in the ledger table of the current bank 
-    #         # Ledger.transaction(int(amount), debit_account, bank_iban, text)
-    #         # print(response)
-    #         return redirect('banking_app:index')
-    #     else:
-    #         context = {
-    #             'currentAccount': currentAccount,
-    #             'allAccounts': allAccounts,
-    #             'error': 'insufficient funds'
-    #         }
+            # make an instance in the ledger table of the current bank 
+            # Ledger.transaction(int(amount), debit_account, bank_iban, text)
+            # print(response)
+        return redirect('banking_app:index')
+    else:
+        context = {
+            'currentAccount': currentAccount,
+            'allAccounts': allAccounts,
+            'error': 'insufficient funds'
+        }
     
-    # return render(request, 'banking_app/transfers.html', context)
+    return render(request, 'banking_app/transfers.html', context)
 
 
 # Customer view - taking a loan

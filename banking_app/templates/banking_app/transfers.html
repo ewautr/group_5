@@ -51,19 +51,44 @@ function uuidv4() {
     return v.toString(16);
   });
 }
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
-function addToLedger() {
-    // make variables
-    const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
-    const toBank = document.querySelector('#externalTransfer #toBank option').value
-    const toAccount = document.querySelector('#externalTransfer #toAccount').value
-    const amount = document.querySelector('#externalTransfer #amount').value
-    const text = document.querySelector('#externalTransfer #text').value
-    const iud = uuidv4()
+// make variables
+const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
+const toBank = document.querySelector('#externalTransfer #toBank option').value
+const toAccount = document.querySelector('#externalTransfer #toAccount').value
+const amount = document.querySelector('#externalTransfer #amount').value
+const text = document.querySelector('#externalTransfer #text').value
+const iud = uuidv4()
+var csrftoken = getCookie('csrftoken');
 
-    // make one ledger instance
+async function addToLedger() {
+    callTransactionsView()
+    addToExternalLedger();
+
+    // positiove feedback
+    console.log('everything worked')
+}
+
+async function addToExternalLedger() {
+    // subtract money from bank's account
     var myHeaders = new Headers();
     myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    myHeaders.append("X-CSRFToken", csrftoken);
     var formdata = new FormData();
     formdata.append("transaction_id", iud);
     formdata.append("account", fromAccount);
@@ -75,14 +100,15 @@ function addToLedger() {
         body: formdata,
         redirect: 'follow'
     };
-    fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    .then(response => response.text())
-    .then(result => console.log(result))
-    .catch(error => console.log('error', error));
+    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
+    if (!connection.ok) {
+        console.log("connection 1 failed");
+        return;
+    }
+    var response = await connection.json();
+    console.log(response);
 
-    // make a second ledger instance
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    // add money to customer's account
     var formdata = new FormData();
     formdata.append("transaction_id", iud);
     formdata.append("account", toAccount);
@@ -94,15 +120,77 @@ function addToLedger() {
         body: formdata,
         redirect: 'follow'
     };
-    fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    .then(response => response.text())
-    .then(result => console.log(result))
-    .catch(error => console.log('error', error));
-    // positiove feedback
-    console.log('yay')
-    
+    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
+    if (!connection.ok) {
+        console.log("connection 2 failed");
+        return;
+    }
+    var response = await connection.json();
+    console.log(response);
 }
 
+async function addToInternalLedger() {
+    // subtract money from customer's account
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    myHeaders.append("X-CSRFToken", csrftoken);
+    var formdata = new FormData();
+    formdata.append("transaction_id", iud);
+    formdata.append("account", fromAccount);
+    formdata.append("amount", `-${amount}`);
+    formdata.append("text", text);
+    var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: formdata,
+        redirect: 'follow'
+    };
+    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    if (!connection.ok) {
+        console.log("connection 3 failed");
+        return;
+    }
+    var response = await connection.json();
+    console.log(response);
+
+    // add money to bank's account
+    var formdata = new FormData();
+    formdata.append("transaction_id", iud);
+    formdata.append("account", toBank);
+    formdata.append("amount", amount);
+    formdata.append("text", text);
+    var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: formdata,
+        redirect: 'follow'
+    };
+    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    if (!connection.ok) {
+        console.log("connection 4 failed");
+        return;
+    }
+    var response = await connection.json();
+    console.log(response);
+}
+
+async function callTransactionsView() {
+    var formdata = new FormData();
+    formdata.append("amount", amount);
+    formdata.append("debit_account", fromAccount);
+    formdata.append("credit_account", toBank);
+    formdata.append("text", text);
+    var connection = await fetch(`/banking_app/transfers/${fromAccount}`, {
+        method: "POST",
+        body: formdata
+    });
+    if (!connection.ok) {
+        console.log("connection with the view is not okay");
+        return;
+    }
+    let response = await connection.json();
+    console.log(response);
+}
 
 </script>
 {% endblock %} 
