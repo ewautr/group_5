@@ -1,20 +1,108 @@
 {% extends 'banking_app/base.html' %} {% block content %}
 <h2>Make a transfer</h2>
+<h3>Internal bank transfer</h3>
 <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST">
     {% csrf_token %}
     <label for="fromAccount">from</label>
     <input type="text" name="fromAccount" id="fromAccount" placeholder="from" value={{ currentAccount.pk }}>
+    <label for="toAccount">to</label>
     <select name="toAccount" id="toAccount">
         {% for account in allAccounts %}
-        <option value={{ account.pk }}> {{ account.pk }} - {{ account.type }}</option>
+            {% if account.account_type != 'Foreign Bank' %}
+                <option value={{ account.pk }}> {{ account.pk }} - {{ account.customer.user }}</option>
+            {% endif %}
         {% endfor %}
     </select>
     <input type="number" name="amount" id="amount" placeholder="amount">
     <input name="text" id="text" placeholder="text">
     <button type="submit">transfer</button>
 </form>
+<h3>External bank transfer</h3>
+<!-- <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST" id="externalTransfer"> -->
+<form onsubmit="return false"  id="externalTransfer">
+    {% csrf_token %}
+    <label for="fromAccount">from</label>
+    <input type="text" name="fromAccount" id="fromAccount" placeholder="from" value={{ currentAccount.pk }}>
+    <label for="toBank">iban</label>
+    <select name="toBank" id="toBank">
+        {% for account in allAccounts %}
+            {% if account.account_type == 'Foreign Bank' %}
+                <option value={{ account.pk }}> {{ account.customer.user }} </option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <label for="toAccount">to</label>
+    <input type="number" name="toAccount" id="toAccount" placeholder="recipient">
+    <input type="number" name="amount" id="amount" placeholder="amount">
+    <input name="text" id="text" placeholder="text">
+    <button type="submit" onclick="addToLedger()">transfer</button>
+</form>
+<br />
 {% if error %}
       <p><strong style="color: red;">Transfer unsuccesfull due to: {{ error }}</strong></p>
 {% endif %}
 <a href={% url 'banking_app:index' %}>go back</a>
+
+<script>
+//unique id generator
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function addToLedger() {
+    // make variables
+    const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
+    const toBank = document.querySelector('#externalTransfer #toBank option').value
+    const toAccount = document.querySelector('#externalTransfer #toAccount').value
+    const amount = document.querySelector('#externalTransfer #amount').value
+    const text = document.querySelector('#externalTransfer #text').value
+    const iud = uuidv4()
+
+    // make one ledger instance
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    var formdata = new FormData();
+    formdata.append("transaction_id", iud);
+    formdata.append("account", fromAccount);
+    formdata.append("amount", `-${amount}`);
+    formdata.append("text", text);
+    var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: formdata,
+        redirect: 'follow'
+    };
+    fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    .then(response => response.text())
+    .then(result => console.log(result))
+    .catch(error => console.log('error', error));
+
+    // make a second ledger instance
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    var formdata = new FormData();
+    formdata.append("transaction_id", iud);
+    formdata.append("account", toAccount);
+    formdata.append("amount", amount);
+    formdata.append("text", text);
+    var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: formdata,
+        redirect: 'follow'
+    };
+    fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    .then(response => response.text())
+    .then(result => console.log(result))
+    .catch(error => console.log('error', error));
+    // positiove feedback
+    console.log('yay')
+    
+}
+
+
+</script>
 {% endblock %} 

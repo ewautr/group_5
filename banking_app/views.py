@@ -63,6 +63,39 @@ def transfers(request, account_id):
 
     return render(request, 'banking_app/transfers.html', context)
 
+# Customer view - transfering money
+@login_required
+def external_transfers(request, account_id):
+    pass
+    # assert not is_employee(request.user)
+
+    # if request.method == 'POST':
+    #     amount = request.POST['amount']
+    #     debit_account = request.POST['fromAccount']
+    #     bank_iban = request.POST['toBank']
+    #     credit_account = request.POST['toAccount']
+    #     text = request.POST['text']
+    #     available_balance = currentAccount.balance
+
+    #     #proceed if the user has sufficient funds to make the transfer
+    #     if available_balance >= int(amount):
+    #         # http request with data for two new instances in the ledger table
+    #         response = request.get('https://www.somedomain.com/some/url/save')
+
+    #         # make an instance in the ledger table of the current bank 
+    #         # Ledger.transaction(int(amount), debit_account, bank_iban, text)
+    #         # print(response)
+    #         return redirect('banking_app:index')
+    #     else:
+    #         context = {
+    #             'currentAccount': currentAccount,
+    #             'allAccounts': allAccounts,
+    #             'error': 'insufficient funds'
+    #         }
+    
+    # return render(request, 'banking_app/transfers.html', context)
+
+
 # Customer view - taking a loan
 @login_required
 def add_loan(request, customer_id):
@@ -181,7 +214,7 @@ def edit_customer(request, customer_id):
         customer.rank = request.POST['rank']
         customer.save()
         user.save()
-        return redirect('banking_app:employee')
+        return redirect('banking_app:index')
 
     return render(request, 'banking_app/edit_customer.html', context)
 
@@ -202,6 +235,6 @@ def add_account(request):
         account.account_type = account_type
         account.save()
 
-        return redirect('banking_app:employee')
+        return redirect('banking_app:index')
 
     return render(request, 'banking_app/add_account.html', context)

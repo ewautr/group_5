@@ -34,6 +34,7 @@ class Account(models.Model):
     class AccountType(models.TextChoices):
         BANK_ACCOUNT = 'Bank Account'
         LOAN = 'Loan'
+        FOREIGN_BANK = 'Foreign Bank'
 
     account_type = models.CharField(choices=AccountType.choices, default=AccountType.BANK_ACCOUNT, max_length=200)
 
@@ -44,6 +45,13 @@ class Account(models.Model):
     def balance(self):
         summedBalance = Ledger.objects.filter(account=self.pk).aggregate(Sum('amount'))['amount__sum']
         return summedBalance
+        
+    @property
+    def is_bank(self):
+        if self.account_type == 'FOREIGN_BANK':
+            return True
+        else:
+            return False
 
 class Ledger(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="fromAccount")
