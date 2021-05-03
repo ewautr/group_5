@@ -39,9 +39,11 @@ def activity(request, account_id):
 def transfers(request, account_id):
     assert not is_employee(request.user)
     currentAccount = get_object_or_404(Account, pk=account_id)
+    available_balance = currentAccount.balance
     allAccounts = Account.objects.exclude(pk=account_id)
     context = {
         'currentAccount': currentAccount,
+        'available_balance': available_balance,
         'allAccounts': allAccounts
     }
     if request.method == 'POST':

@@ -1,5 +1,6 @@
 {% extends 'banking_app/base.html' %} {% block content %}
 <h2>Make a transfer</h2>
+<p>Available balance: <span id="availableBalance">{{ available_balance }}</span></p>
 <h3>Internal bank transfer</h3>
 <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST">
     {% csrf_token %}
@@ -67,31 +68,28 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// make variables
-const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
-const toBank = document.querySelector('#externalTransfer #toBank option').value
-const toAccount = document.querySelector('#externalTransfer #toAccount').value
-const amount = document.querySelector('#externalTransfer #amount').value
-const text = document.querySelector('#externalTransfer #text').value
-const iud = uuidv4()
-var csrftoken = getCookie('csrftoken');
-
 async function addToLedger() {
-    callTransactionsView()
-    addToExternalLedger();
+    // make variables
+    const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
+    const toBank = document.querySelector('#externalTransfer #toBank option').value
+    const toAccount = document.querySelector('#externalTransfer #toAccount').value
+    const amount = document.querySelector('#externalTransfer #amount').value
+    const text = document.querySelector('#externalTransfer #text').value
+    const iud = uuidv4()
+    var csrftoken = getCookie('csrftoken');
 
-    // positiove feedback
-    console.log('everything worked')
-}
-
-async function addToExternalLedger() {
+    //check if funds are sufficient
+    if(parseInt(amount) > parseInt(document.querySelector('#availableBalance').innerText)) {
+        console.log('insufficient funds')
+        return
+    }
     // subtract money from bank's account
     var myHeaders = new Headers();
     myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
     myHeaders.append("X-CSRFToken", csrftoken);
     var formdata = new FormData();
     formdata.append("transaction_id", iud);
-    formdata.append("account", fromAccount);
+    formdata.append("account", toBank);
     formdata.append("amount", `-${amount}`);
     formdata.append("text", text);
     var requestOptions = {
@@ -102,7 +100,7 @@ async function addToExternalLedger() {
     };
     var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
     if (!connection.ok) {
-        console.log("connection 1 failed");
+        console.log("did not subtract money from bank account");
         return;
     }
     var response = await connection.json();
@@ -122,14 +120,12 @@ async function addToExternalLedger() {
     };
     var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
     if (!connection.ok) {
-        console.log("connection 2 failed");
+        console.log("did not add money to receivers account");
         return;
     }
     var response = await connection.json();
     console.log(response);
-}
 
-async function addToInternalLedger() {
     // subtract money from customer's account
     var myHeaders = new Headers();
     myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
@@ -147,7 +143,7 @@ async function addToInternalLedger() {
     };
     var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
     if (!connection.ok) {
-        console.log("connection 3 failed");
+        console.log("did not subtract money from sendder account");
         return;
     }
     var response = await connection.json();
@@ -167,30 +163,11 @@ async function addToInternalLedger() {
     };
     var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
     if (!connection.ok) {
-        console.log("connection 4 failed");
+        console.log("did not send money to foreign bank's account");
         return;
     }
     var response = await connection.json();
     console.log(response);
 }
-
-async function callTransactionsView() {
-    var formdata = new FormData();
-    formdata.append("amount", amount);
-    formdata.append("debit_account", fromAccount);
-    formdata.append("credit_account", toBank);
-    formdata.append("text", text);
-    var connection = await fetch(`/banking_app/transfers/${fromAccount}`, {
-        method: "POST",
-        body: formdata
-    });
-    if (!connection.ok) {
-        console.log("connection with the view is not okay");
-        return;
-    }
-    let response = await connection.json();
-    console.log(response);
-}
-
 </script>
 {% endblock %} 
