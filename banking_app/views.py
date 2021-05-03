@@ -5,10 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from .utils import is_employee
+from django_otp.decorators import otp_required
+from django.contrib.auth import logout as dj_logout
 
 
 # Customer and Employee view
 @login_required
+@otp_required
 def index(request):
     if is_employee(request.user):
         customers = Customer.objects.all()
@@ -22,7 +25,11 @@ def index(request):
             'customer': customer,
             'accounts': accounts
         }
-        return render(request, 'banking_app/index.html', context)
+    return render(request, 'banking_app/index.html', context)
+
+def LogoutView(request):
+   dj_logout(request)
+   return redirect('two_factor:login')
 
 # Customer view - account activity
 @login_required

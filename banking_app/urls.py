@@ -14,4 +14,7 @@ urlpatterns = [
     path('add_customer', views.add_customer, name='add_customer'),
     path('add_account', views.add_account, name='add_account'),
     path('edit_customer/<customer_id>', views.edit_customer, name='edit_customer'),
+    path("logout/", views.LogoutView, name="logout"),
+    # path('logout/', views.logout, name='logout'),
+    # path('redirect_customer/', views.redirect_customer, name='redirect_customer'),
 ]
