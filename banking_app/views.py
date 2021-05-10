@@ -205,6 +205,8 @@ def add_customer(request):
 
         django_rq.enqueue(email_message, {
             'email' : customer.user.email,
+            'username': customer.user.username,
+            'password': password,
         })
 
     return render(request, 'banking_app/add_customer.html', context)

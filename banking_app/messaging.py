@@ -5,7 +5,13 @@ def email_message(message_dict):
    Welcome! You have been created as a customer for NES Bank. Click the following link and insert your credentials in order to activate your account.
    http://127.0.0.1:8000/account/two_factor/setup/
    Make sure you have downloaded the Google Authenticator App. If you do not have it yet, then get it. 
+   
+   Your username: {message_dict['username']}
+   Your password: {message_dict['password']}
+   
    """
+   print(message_dict)
+
    send_mail(
       'Activate your account',
       contents,
