@@ -9,13 +9,13 @@
     <select name="toAccount" id="toAccount">
         {% for account in allAccounts %}
             {% if account.account_type != 'Foreign Bank' %}
-                <option value={{ account.pk }}> {{ account.pk }} - {{ account.customer.user }}</option>
+                <option value={{ account.pk }} customer_id="{{ account.customer.pk }}"> {{ account.pk }} - {{ account.customer.user }} - {{ account.customer.pk }}</option>
             {% endif %}
         {% endfor %}
     </select>
     <input type="number" name="amount" id="amount" placeholder="amount">
     <input name="text" id="text" placeholder="text">
-    <button type="submit">transfer</button>
+    <button id="submitTransaction" type="submit">transfer</button>
 </form>
 <h3>External bank transfer</h3>
 <!-- <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST" id="externalTransfer"> -->
@@ -68,7 +68,7 @@ function getCookie(name) {
 }
 
 // make variables
-const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
+const fromAccount = "{{currentAccount.pk}}"
 const toBank = document.querySelector('#externalTransfer #toBank option').value
 const toAccount = document.querySelector('#externalTransfer #toAccount').value
 const amount = document.querySelector('#externalTransfer #amount').value
@@ -191,6 +191,33 @@ async function callTransactionsView() {
     let response = await connection.json();
     console.log(response);
 }
+
+
+
+// sending the notification (should happen when making the transfer)
+document.querySelector("#submitTransaction").addEventListener("click", sendNotification);
+  function sendNotification(e) {
+    // gater data
+    const senderSocketName = "{{currentAccount.customer.id}}";
+    const amount = document.querySelector('#amount').value;
+    const select = document.querySelector('#toAccount')
+    const receiverSocketName = select.options[select.selectedIndex].getAttribute('customer_id');
+
+    // open chat socket of the receiver
+    const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/notifications/" + receiverSocketName + "/");
+
+    // send the message to the receiver's socket
+    chatSocket.onopen = () => {
+        console.log()
+        chatSocket.send(
+            JSON.stringify({
+            sender: senderSocketName,
+            amount: amount,
+        })
+    );
+    }
+    
+  }
 
 </script>
 {% endblock %} 
