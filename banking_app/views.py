@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 from .utils import is_employee
 from django_otp.decorators import otp_required
 from django.contrib.auth import logout as dj_logout
-
+import django_rq
+from . messaging import email_message
 
 # Customer and Employee view
 @login_required
@@ -202,7 +203,16 @@ def add_customer(request):
         customer.rank = rank
         customer.save()
 
+        django_rq.enqueue(email_message, {
+            'email' : customer.user.email,
+        })
+
     return render(request, 'banking_app/add_customer.html', context)
+
+# Activate account - View
+def activate_account(request):
+   pass
+
 
 # Employee view - editing a customer
 @login_required
