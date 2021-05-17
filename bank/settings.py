@@ -69,8 +69,8 @@ EMAIL_USE_TLS = True
 # EMAIL_USE_SSL = False
 EMAIL_HOST = 'smtp-relay.sendinblue.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'nata2653@stud.kea.dk'
-EMAIL_HOST_PASSWORD = 'VzEnHkcaNFyJS3KY'
+EMAIL_HOST_USER = 'ewax0437@stud.kea.dk'
+EMAIL_HOST_PASSWORD = '3pvL5UEQWKBJAcgZ'
 
 SITE_ID = 1
 

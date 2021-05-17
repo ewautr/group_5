@@ -19,3 +19,21 @@ def email_message(message_dict):
       [message_dict['email']],
       fail_silently=False
    )
+
+def email_statement(message_dict):
+    statements = []
+    activities = message_dict['activities']
+    for activity in activities:
+        statements.append(str(activity)) 
+    contents = """
+        {}
+    """.format("\n".join(statements))
+    print(contents)
+
+    # send_mail(
+    #     'Bank statements',
+    #     contents,
+    #     'ewax0437@stud.kea.dk',
+    #     [message_dict['user_email']],
+    #     fail_silently=False
+    # )

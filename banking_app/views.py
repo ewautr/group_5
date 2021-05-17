@@ -9,6 +9,8 @@ from django_otp.decorators import otp_required
 from django.contrib.auth import logout as dj_logout
 import django_rq
 from . messaging import email_message
+from . messaging import email_statement
+from django.core import serializers
 
 # Customer and Employee view
 @login_required
@@ -39,7 +41,28 @@ def activity(request, account_id):
     activities = Ledger.objects.filter(account=account_id)
     context = {
         'activities': activities,
+        'account_id': account_id
     }
+    return render(request, 'banking_app/activity.html', context)
+
+@login_required
+def send_statement(request, account_id):
+    assert not is_employee(request.user)
+    user_email = request.user.email
+    activities = Ledger.objects.filter(account=account_id)
+
+    context = {
+        'user_email': user_email,
+        'activities': activities,
+        'account_id': account_id,
+    }
+    print(activities)
+
+    django_rq.enqueue(email_statement, {
+        'user_email': user_email,
+        'activities': activities,
+    })
+
     return render(request, 'banking_app/activity.html', context)
 
 # Customer view - transfering money
@@ -174,7 +197,6 @@ def pay_loan(request, customer_id, account_id):
 
     return render(request, 'banking_app/pay_loan.html', context)
 
-
 # Employee view - adding a new customer
 @login_required
 def add_customer(request): 
@@ -210,11 +232,6 @@ def add_customer(request):
         })
 
     return render(request, 'banking_app/add_customer.html', context)
-
-# Activate account - View
-def activate_account(request):
-   pass
-
 
 # Employee view - editing a customer
 @login_required
