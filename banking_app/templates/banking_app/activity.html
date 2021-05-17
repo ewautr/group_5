@@ -1,6 +1,10 @@
 {% extends 'banking_app/base.html' %}
 {% block content %}
 <h2>Account activity:</h2>
+<form method="GET">
+  {{ myFilter.form }}
+  <button type="submit">Search</button>
+</form>
 <ol>
   {% for activity in activities %}
   <li style="display: flex; justify-content: space-between">

@@ -11,6 +11,7 @@ import django_rq
 from . messaging import email_message
 from . messaging import email_statement
 from django.core import serializers
+from .filters import LedgerFilter
 
 # Customer and Employee view
 @login_required
@@ -38,10 +39,15 @@ def LogoutView(request):
 @login_required
 def activity(request, account_id):
     assert not is_employee(request.user)
-    activities = Ledger.objects.filter(account=account_id)
+    activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
+    
+    myFilter = LedgerFilter(request.GET, queryset=activities)
+    activities = myFilter.qs
+
     context = {
         'activities': activities,
-        'account_id': account_id
+        'account_id': account_id,
+        'myFilter': myFilter
     }
     return render(request, 'banking_app/activity.html', context)
 
@@ -49,7 +55,7 @@ def activity(request, account_id):
 def send_statement(request, account_id):
     assert not is_employee(request.user)
     user_email = request.user.email
-    activities = Ledger.objects.filter(account=account_id)
+    activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
 
     context = {
         'user_email': user_email,
