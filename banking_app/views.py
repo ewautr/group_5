@@ -12,9 +12,13 @@ from . messaging import email_message
 from . messaging import email_statement
 from django.core import serializers
 from .filters import LedgerFilter
+import requests
+import uuid
+
 
 # Customer and Employee view
 @login_required
+@otp_required
 def index(request):
     if is_employee(request.user):
         customers = Customer.objects.all()
@@ -36,6 +40,7 @@ def LogoutView(request):
 
 # Customer view - account activity
 @login_required
+@otp_required
 def activity(request, account_id):
     assert not is_employee(request.user)
     activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
@@ -51,6 +56,7 @@ def activity(request, account_id):
     return render(request, 'banking_app/activity.html', context)
 
 @login_required
+@otp_required
 def send_statement(request, account_id):
     assert not is_employee(request.user)
     user_email = request.user.email
@@ -72,12 +78,15 @@ def send_statement(request, account_id):
 
 # Customer view - transfering money
 @login_required
+@otp_required
 def transfers(request, account_id):
     assert not is_employee(request.user)
     currentAccount = get_object_or_404(Account, pk=account_id)
+    available_balance = currentAccount.balance
     allAccounts = Account.objects.exclude(pk=account_id)
     context = {
         'currentAccount': currentAccount,
+        'available_balance': available_balance,
         'allAccounts': allAccounts
     }
     if request.method == 'POST':
@@ -101,23 +110,57 @@ def transfers(request, account_id):
 
 # Customer view - transfering money
 @login_required
+@otp_required
 def external_transfer(request, account_id):
     assert not is_employee(request.user)
+
+    currentAccount = get_object_or_404(Account, pk=account_id)
+    allAccounts = Account.objects.exclude(pk=account_id)
+    
     amount = request.POST['amount']
     debit_account = request.POST['fromAccount']
     bank_iban = request.POST['toBank']
     credit_account = request.POST['toAccount']
     text = request.POST['text']
+    transaction_id = uuid.uuid1()
     available_balance = currentAccount.balance
 
         #proceed if the user has sufficient funds to make the transfer
     if available_balance >= int(amount):
-            # http request with data for two new instances in the ledger table
-        response = request.get('https://www.somedomain.com/some/url/save')
+        # authenticating the bank user
+        response = requests.post('http://127.0.0.1:8003/api/v1/rest-auth/login/', data={'username': 'Bank 8000', 'password': 'pass1'})
+        api_key = response.json()['key']
 
-            # make an instance in the ledger table of the current bank 
-            # Ledger.transaction(int(amount), debit_account, bank_iban, text)
-            # print(response)
+        # check if the recipient exists 
+        response = requests.get(f'http://127.0.0.1:8003/api/v1/{credit_account}', headers={'Authorization': f'Token {api_key}'})
+        if response.status_code == 404:
+            context = {
+                'currentAccount': currentAccount,
+                'allAccounts': allAccounts,
+                'error': 'account does not exist'
+            }
+            return render(request, 'banking_app/transfers.html', context)
+        
+        # http request with data for two new instances in the ledger table
+        ledger_row_1 = {
+            "transaction_id": transaction_id,
+            "account": bank_iban,
+            "amount": f'-{amount}',
+            "text": text
+        }
+        ledger_row_2 = {
+            "transaction_id": transaction_id,
+            "account": credit_account,
+            "amount": amount,
+            "text": text
+        }
+        response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_1)
+        response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_2)
+        
+        # if response is okay proceed with making a ledger instance in the current bank 
+        if response.status_code == 201:
+            Ledger.transaction(int(amount), debit_account, bank_iban, text)
+
         return redirect('banking_app:index')
     else:
         context = {
@@ -131,6 +174,7 @@ def external_transfer(request, account_id):
 
 # Customer view - taking a loan
 @login_required
+@otp_required
 def add_loan(request, customer_id):
     assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
@@ -159,6 +203,7 @@ def add_loan(request, customer_id):
 
 # Customer view - paying off a loan
 @login_required
+@otp_required
 def pay_loan(request, customer_id, account_id):
     assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
@@ -204,6 +249,7 @@ def pay_loan(request, customer_id, account_id):
 
 # Employee view - adding a new customer
 @login_required
+@otp_required
 def add_customer(request): 
     assert is_employee(request.user)
     context = {}
@@ -240,6 +286,7 @@ def add_customer(request):
 
 # Employee view - editing a customer
 @login_required
+@otp_required
 def edit_customer(request, customer_id):
     assert is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
@@ -258,6 +305,7 @@ def edit_customer(request, customer_id):
 
 # Employee view - adding a new account
 @login_required
+@otp_required
 def add_account(request):
     assert is_employee(request.user)
     customers = Customer.objects.all()

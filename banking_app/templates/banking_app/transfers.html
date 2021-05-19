@@ -1,5 +1,6 @@
 {% extends 'banking_app/base.html' %} {% block content %}
 <h2>Make a transfer</h2>
+<p>Available balance: <span id="availableBalance">{{ available_balance }}</span></p>
 <h3>Internal bank transfer</h3>
 <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST">
     {% csrf_token %}
@@ -18,8 +19,7 @@
     <button id="submitTransaction" type="submit">transfer</button>
 </form>
 <h3>External bank transfer</h3>
-<!-- <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST" id="externalTransfer"> -->
-<form onsubmit="return false"  id="externalTransfer">
+<form action={% url 'banking_app:external_transfer' account_id=currentAccount.pk %} method="POST" id="externalTransfer">
     {% csrf_token %}
     <label for="fromAccount">from</label>
     <input type="text" name="fromAccount" id="fromAccount" placeholder="from" value={{ currentAccount.pk }}>
@@ -44,180 +44,30 @@
 <a href={% url 'banking_app:index' %}>go back</a>
 
 <script>
-//unique id generator
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+    // sending the notification (should happen when making the transfer)
+    document.querySelector("#submitTransaction").addEventListener("click", sendNotification);
+    function sendNotification(e) {
+        // gater data
+        const senderSocketName = "{{currentAccount.customer.id}}";
+        const amount = document.querySelector('#amount').value;
+        const select = document.querySelector('#toAccount')
+        const receiverSocketName = select.options[select.selectedIndex].getAttribute('customer_id');
+
+        // open chat socket of the receiver
+        const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/notifications/" + receiverSocketName + "/");
+
+        // send the message to the receiver's socket
+        chatSocket.onopen = () => {
+            console.log()
+            chatSocket.send(
+                JSON.stringify({
+                sender: senderSocketName,
+                amount: amount,
+            })
+        );
         }
-    }
-    return cookieValue;
-}
-
-// make variables
-const fromAccount = "{{currentAccount.pk}}"
-const toBank = document.querySelector('#externalTransfer #toBank option').value
-const toAccount = document.querySelector('#externalTransfer #toAccount').value
-const amount = document.querySelector('#externalTransfer #amount').value
-const text = document.querySelector('#externalTransfer #text').value
-const iud = uuidv4()
-var csrftoken = getCookie('csrftoken');
-
-async function addToLedger() {
-    callTransactionsView()
-    addToExternalLedger();
-
-    // positiove feedback
-    console.log('everything worked')
-}
-
-async function addToExternalLedger() {
-    // subtract money from bank's account
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
-    myHeaders.append("X-CSRFToken", csrftoken);
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", fromAccount);
-    formdata.append("amount", `-${amount}`);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("connection 1 failed");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
-
-    // add money to customer's account
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", toAccount);
-    formdata.append("amount", amount);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("connection 2 failed");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
-}
-
-async function addToInternalLedger() {
-    // subtract money from customer's account
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
-    myHeaders.append("X-CSRFToken", csrftoken);
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", fromAccount);
-    formdata.append("amount", `-${amount}`);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("connection 3 failed");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
-
-    // add money to bank's account
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", toBank);
-    formdata.append("amount", amount);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("connection 4 failed");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
-}
-
-async function callTransactionsView() {
-    var formdata = new FormData();
-    formdata.append("amount", amount);
-    formdata.append("debit_account", fromAccount);
-    formdata.append("credit_account", toBank);
-    formdata.append("text", text);
-    var connection = await fetch(`/banking_app/transfers/${fromAccount}`, {
-        method: "POST",
-        body: formdata
-    });
-    if (!connection.ok) {
-        console.log("connection with the view is not okay");
-        return;
-    }
-    let response = await connection.json();
-    console.log(response);
-}
-
-
-
-// sending the notification (should happen when making the transfer)
-document.querySelector("#submitTransaction").addEventListener("click", sendNotification);
-  function sendNotification(e) {
-    // gater data
-    const senderSocketName = "{{currentAccount.customer.id}}";
-    const amount = document.querySelector('#amount').value;
-    const select = document.querySelector('#toAccount')
-    const receiverSocketName = select.options[select.selectedIndex].getAttribute('customer_id');
-
-    // open chat socket of the receiver
-    const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/notifications/" + receiverSocketName + "/");
-
-    // send the message to the receiver's socket
-    chatSocket.onopen = () => {
-        console.log()
-        chatSocket.send(
-            JSON.stringify({
-            sender: senderSocketName,
-            amount: amount,
-        })
-    );
-    }
-    
+        
   }
-
 </script>
+
 {% endblock %} 
