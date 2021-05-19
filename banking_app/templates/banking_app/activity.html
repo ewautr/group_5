@@ -1,5 +1,10 @@
-{% extends 'banking_app/base.html' %} {% block content %}
+{% extends 'banking_app/base.html' %}
+{% block content %}
 <h2>Account activity:</h2>
+<form method="GET">
+  {{ myFilter.form }}
+  <button type="submit">Search</button>
+</form>
 <ol>
   {% for activity in activities %}
   <li style="display: flex; justify-content: space-between">
@@ -8,7 +13,10 @@
     Date: <span style="font-weight: bold; font-size: 20px;">{{ activity.timestamp }}</span>
   </li>
   <hr />
-  {% endfor %} 
+  {% endfor %}
 </ol>
+
+<a href="{% url 'banking_app:send_statement' account_id=account_id %}">Send email</a>
+
 <a href={% url 'banking_app:index' %}>go back</a>
 {% endblock %}

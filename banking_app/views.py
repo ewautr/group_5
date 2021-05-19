@@ -5,7 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from .utils import is_employee
-
+from django_otp.decorators import otp_required
+from django.contrib.auth import logout as dj_logout
+import django_rq
+from . messaging import email_message
+from . messaging import email_statement
+from django.core import serializers
+from .filters import LedgerFilter
 
 # Customer and Employee view
 @login_required
@@ -22,16 +28,46 @@ def index(request):
             'customer': customer,
             'accounts': accounts
         }
-        return render(request, 'banking_app/index.html', context)
+    return render(request, 'banking_app/index.html', context)
+
+def LogoutView(request):
+   dj_logout(request)
+   return redirect('two_factor:login')
 
 # Customer view - account activity
 @login_required
 def activity(request, account_id):
     assert not is_employee(request.user)
-    activities = Ledger.objects.filter(account=account_id)
+    activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
+    
+    myFilter = LedgerFilter(request.GET, queryset=activities)
+    activities = myFilter.qs
+
     context = {
         'activities': activities,
+        'account_id': account_id,
+        'myFilter': myFilter
     }
+    return render(request, 'banking_app/activity.html', context)
+
+@login_required
+def send_statement(request, account_id):
+    assert not is_employee(request.user)
+    user_email = request.user.email
+    activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
+
+    context = {
+        'user_email': user_email,
+        'activities': activities,
+        'account_id': account_id,
+    }
+    print(activities)
+
+    django_rq.enqueue(email_statement, {
+        'user_email': user_email,
+        'activities': activities,
+    })
+
     return render(request, 'banking_app/activity.html', context)
 
 # Customer view - transfering money
@@ -166,7 +202,6 @@ def pay_loan(request, customer_id, account_id):
 
     return render(request, 'banking_app/pay_loan.html', context)
 
-
 # Employee view - adding a new customer
 @login_required
 def add_customer(request): 
@@ -194,6 +229,12 @@ def add_customer(request):
         customer.phone = phone
         customer.rank = rank
         customer.save()
+
+        django_rq.enqueue(email_message, {
+            'email' : customer.user.email,
+            'username': customer.user.username,
+            'password': password,
+        })
 
     return render(request, 'banking_app/add_customer.html', context)
 

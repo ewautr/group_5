@@ -41,9 +41,6 @@ INSTALLED_APPS = [
 
     # my apps
     'banking_app',
-    'login_app',
-
-    # rest api
     'rest_framework',
     'rest_framework.authtoken',
     'allauth',
@@ -54,8 +51,25 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # channels
-    'channels'
+    'channels',
+
+    #two factor auth
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'two_factor',
+    'django_rq',
+    'django_filters',
 ]
+
+RQ_QUEUES = {
+   'default': {
+      'HOST': 'localhost',
+      'PORT': '6379',
+      'DB': 0,
+      'DEFAULT_TIMEOUT': 360,
+   }
+}
 
 # for channels
 ASGI_APPLICATION = 'bank.asgi.application'
@@ -68,7 +82,14 @@ CHANNEL_LAYERS = {
     },
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False
+EMAIL_HOST = 'smtp-relay.sendinblue.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'ewax0437@stud.kea.dk'
+EMAIL_HOST_PASSWORD = '3pvL5UEQWKBJAcgZ'
 
 SITE_ID = 1
 
@@ -89,6 +110,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -170,3 +192,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
+
+LOGIN_URL = 'two_factor:login'
+# LOGIN_REDIRECT_URL = 'banking_app:redirect_customer'
+LOGIN_REDIRECT_URL = 'banking_app:index'
+
+LOGOUT_REDIRECT_URL = 'two_factor:login'

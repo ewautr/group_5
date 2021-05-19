@@ -8,5 +8,8 @@ The banking system is build based on the listed requirements for the Mandatory A
 Run project:
 python manage.py runserver
 
-Enable notifications:
+Enable notifications, 2FA and task queues for emails:
 docker run -p 6379:6379 -d redis:5
+
+Enable rqworker for emails:
+python manage.py rqworker
