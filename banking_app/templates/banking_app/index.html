@@ -74,8 +74,10 @@
   var notification = document.querySelector("#notification");
   var notificationText = document.querySelector("#notification > p");
   var notificationCloseButton = document.querySelector("#notification > span");
+  console.log(userSocketName);
 
   const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/notifications/" + userSocketName + "/");
+  console.log(chatSocket);
   // check if the connection is open
   chatSocket.onopen = function (e) {
     console.log("connection is open");
