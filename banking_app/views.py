@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from .utils import is_employee
 import requests
+import uuid
 
 
 # Customer and Employee view
@@ -79,20 +80,45 @@ def external_transfer(request, account_id):
     bank_iban = request.POST['toBank']
     credit_account = request.POST['toAccount']
     text = request.POST['text']
+    transaction_id = uuid.uuid1()
     available_balance = currentAccount.balance
 
         #proceed if the user has sufficient funds to make the transfer
     if available_balance >= int(amount):
-            # http request with data for two new instances in the ledger table
-        # response = requests.post('http://0.0.0.0:8003/api/v1/api-auth/login/', headers=('Authorization', 'Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518'))
-        # response = requests.get('http://0.0.0.0:8003/api/v1/api-auth/login/', headers = {'Authorization': 'Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518'})
-        response = requests.get('http://0.0.0.0:8003/api/v1/')
-        print(response)
+        # authenticating the bank user
+        response = requests.post('http://127.0.0.1:8003/api/v1/rest-auth/login/', data={'username': 'Bank 8000', 'password': 'pass1'})
+        api_key = response.json()['key']
 
-            # if response is okay proceed with making a ledger instance
+        # check if the recipient exists 
+        response = requests.get(f'http://127.0.0.1:8003/api/v1/{credit_account}', headers={'Authorization': f'Token {api_key}'})
+        if response.status_code == 404:
+            context = {
+                'currentAccount': currentAccount,
+                'allAccounts': allAccounts,
+                'error': 'account does not exist'
+            }
+            return render(request, 'banking_app/transfers.html', context)
+        
+        # http request with data for two new instances in the ledger table
+        ledger_row_1 = {
+            "transaction_id": transaction_id,
+            "account": bank_iban,
+            "amount": f'-{amount}',
+            "text": text
+        }
+        ledger_row_2 = {
+            "transaction_id": transaction_id,
+            "account": credit_account,
+            "amount": amount,
+            "text": text
+        }
+        response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_1)
+        response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_2)
+        
+        # if response is okay proceed with making a ledger instance in the current bank 
+        if response.status_code == 201:
+            Ledger.transaction(int(amount), debit_account, bank_iban, text)
 
-            # make an instance in the ledger table of the current bank 
-            # Ledger.transaction(int(amount), debit_account, bank_iban, text)
         return redirect('banking_app:index')
     else:
         context = {
