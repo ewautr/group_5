@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
 from .utils import is_employee
+import requests
 
 
 # Customer and Employee view
@@ -69,6 +70,10 @@ def transfers(request, account_id):
 @login_required
 def external_transfer(request, account_id):
     assert not is_employee(request.user)
+
+    currentAccount = get_object_or_404(Account, pk=account_id)
+    allAccounts = Account.objects.exclude(pk=account_id)
+    
     amount = request.POST['amount']
     debit_account = request.POST['fromAccount']
     bank_iban = request.POST['toBank']
@@ -79,11 +84,15 @@ def external_transfer(request, account_id):
         #proceed if the user has sufficient funds to make the transfer
     if available_balance >= int(amount):
             # http request with data for two new instances in the ledger table
-        response = request.get('https://www.somedomain.com/some/url/save')
+        # response = requests.post('http://0.0.0.0:8003/api/v1/api-auth/login/', headers=('Authorization', 'Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518'))
+        # response = requests.get('http://0.0.0.0:8003/api/v1/api-auth/login/', headers = {'Authorization': 'Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518'})
+        response = requests.get('http://0.0.0.0:8003/api/v1/')
+        print(response)
+
+            # if response is okay proceed with making a ledger instance
 
             # make an instance in the ledger table of the current bank 
             # Ledger.transaction(int(amount), debit_account, bank_iban, text)
-            # print(response)
         return redirect('banking_app:index')
     else:
         context = {

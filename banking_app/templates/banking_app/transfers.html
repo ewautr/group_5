@@ -19,8 +19,7 @@
     <button type="submit">transfer</button>
 </form>
 <h3>External bank transfer</h3>
-<!-- <form action={% url 'banking_app:transfers' account_id=currentAccount.pk %} method="POST" id="externalTransfer"> -->
-<form onsubmit="return false"  id="externalTransfer">
+<form action={% url 'banking_app:external_transfer' account_id=currentAccount.pk %} method="POST" id="externalTransfer">
     {% csrf_token %}
     <label for="fromAccount">from</label>
     <input type="text" name="fromAccount" id="fromAccount" placeholder="from" value={{ currentAccount.pk }}>
@@ -46,128 +45,128 @@
 
 <script>
 //unique id generator
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
+// function uuidv4() {
+//   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+//     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+//     return v.toString(16);
+//   });
+// }
+// function getCookie(name) {
+//     var cookieValue = null;
+//     if (document.cookie && document.cookie !== '') {
+//         var cookies = document.cookie.split(';');
+//         for (var i = 0; i < cookies.length; i++) {
+//             var cookie = cookies[i].trim();
+//             // Does this cookie string begin with the name we want?
+//             if (cookie.substring(0, name.length + 1) === (name + '=')) {
+//                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+//                 break;
+//             }
+//         }
+//     }
+//     return cookieValue;
+// }
 
-async function addToLedger() {
-    // make variables
-    const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
-    const toBank = document.querySelector('#externalTransfer #toBank option').value
-    const toAccount = document.querySelector('#externalTransfer #toAccount').value
-    const amount = document.querySelector('#externalTransfer #amount').value
-    const text = document.querySelector('#externalTransfer #text').value
-    const iud = uuidv4()
-    var csrftoken = getCookie('csrftoken');
+// async function addToLedger() {
+//     // make variables
+//     const fromAccount = document.querySelector('#externalTransfer #fromAccount').value
+//     const toBank = document.querySelector('#externalTransfer #toBank option').value
+//     const toAccount = document.querySelector('#externalTransfer #toAccount').value
+//     const amount = document.querySelector('#externalTransfer #amount').value
+//     const text = document.querySelector('#externalTransfer #text').value
+//     const iud = uuidv4()
+//     var csrftoken = getCookie('csrftoken');
 
-    //check if funds are sufficient
-    if(parseInt(amount) > parseInt(document.querySelector('#availableBalance').innerText)) {
-        console.log('insufficient funds')
-        return
-    }
-    // subtract money from bank's account
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
-    myHeaders.append("X-CSRFToken", csrftoken);
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", toBank);
-    formdata.append("amount", `-${amount}`);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("did not subtract money from bank account");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
+//     //check if funds are sufficient
+//     if(parseInt(amount) > parseInt(document.querySelector('#availableBalance').innerText)) {
+//         console.log('insufficient funds')
+//         return
+//     }
+//     // subtract money from bank's account
+//     var myHeaders = new Headers();
+//     myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+//     myHeaders.append("X-CSRFToken", csrftoken);
+//     var formdata = new FormData();
+//     formdata.append("transaction_id", iud);
+//     formdata.append("account", toBank);
+//     formdata.append("amount", `-${amount}`);
+//     formdata.append("text", text);
+//     var requestOptions = {
+//         method: 'POST',
+//         headers: myHeaders,
+//         body: formdata,
+//         redirect: 'follow'
+//     };
+//     var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
+//     if (!connection.ok) {
+//         console.log("did not subtract money from bank account");
+//         return;
+//     }
+//     var response = await connection.json();
+//     console.log(response);
 
-    // add money to customer's account
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", toAccount);
-    formdata.append("amount", amount);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("did not add money to receivers account");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
+//     // add money to customer's account
+//     var formdata = new FormData();
+//     formdata.append("transaction_id", iud);
+//     formdata.append("account", toAccount);
+//     formdata.append("amount", amount);
+//     formdata.append("text", text);
+//     var requestOptions = {
+//         method: 'POST',
+//         headers: myHeaders,
+//         body: formdata,
+//         redirect: 'follow'
+//     };
+//     var connection = await fetch(`http://0.0.0.0:8003/api/v1/ledger/`, requestOptions)
+//     if (!connection.ok) {
+//         console.log("did not add money to receivers account");
+//         return;
+//     }
+//     var response = await connection.json();
+//     console.log(response);
 
     // subtract money from customer's account
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
-    myHeaders.append("X-CSRFToken", csrftoken);
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", fromAccount);
-    formdata.append("amount", `-${amount}`);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("did not subtract money from sendder account");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
+    // var myHeaders = new Headers();
+    // myHeaders.append("Authorization", "Token c12b03dc0013a1e99a0a3c4a38221ee300eb8518");
+    // myHeaders.append("X-CSRFToken", csrftoken);
+    // var formdata = new FormData();
+    // formdata.append("transaction_id", iud);
+    // formdata.append("account", fromAccount);
+    // formdata.append("amount", `-${amount}`);
+    // formdata.append("text", text);
+    // var requestOptions = {
+    //     method: 'POST',
+    //     headers: myHeaders,
+    //     body: formdata,
+    //     redirect: 'follow'
+    // };
+    // var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    // if (!connection.ok) {
+    //     console.log("did not subtract money from sendder account");
+    //     return;
+    // }
+    // var response = await connection.json();
+    // console.log(response);
 
-    // add money to bank's account
-    var formdata = new FormData();
-    formdata.append("transaction_id", iud);
-    formdata.append("account", toBank);
-    formdata.append("amount", amount);
-    formdata.append("text", text);
-    var requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: formdata,
-        redirect: 'follow'
-    };
-    var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
-    if (!connection.ok) {
-        console.log("did not send money to foreign bank's account");
-        return;
-    }
-    var response = await connection.json();
-    console.log(response);
-}
+    // // add money to bank's account
+    // var formdata = new FormData();
+    // formdata.append("transaction_id", iud);
+    // formdata.append("account", toBank);
+    // formdata.append("amount", amount);
+    // formdata.append("text", text);
+    // var requestOptions = {
+    //     method: 'POST',
+    //     headers: myHeaders,
+    //     body: formdata,
+    //     redirect: 'follow'
+    // };
+    // var connection = await fetch(`http://127.0.0.1:8000/api/v1/ledger/`, requestOptions)
+    // if (!connection.ok) {
+    //     console.log("did not send money to foreign bank's account");
+    //     return;
+    // }
+    // var response = await connection.json();
+    // console.log(response);
+// }
 </script>
 {% endblock %} 
