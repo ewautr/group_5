@@ -35,4 +35,69 @@
   </ol>
   {% endif %}
 </ul>
+
+<div id="notification">
+  <p></p>
+  <span>x</span>
+</div>
+
+<style>
+  #notification {
+    background: pink;
+    width: max-content;
+    padding: 10px 20px;
+    border-radius: 10px;
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    opacity: 0;
+    transition: all 0.2s ease-in;
+  }
+  #notification span {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: rgb(223, 223, 223);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease-in;
+  }
+</style>
+
+<script>
+  // hardcoding Natalie's user fk
+  var userSocketName = "{{customer.id}}";
+  var notification = document.querySelector("#notification");
+  var notificationText = document.querySelector("#notification > p");
+  var notificationCloseButton = document.querySelector("#notification > span");
+
+  const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/notifications/" + userSocketName + "/");
+  // check if the connection is open
+  chatSocket.onopen = function (e) {
+    console.log("connection is open");
+  };
+
+  //when receiving the message
+  chatSocket.onmessage = function (e) {
+    console.log("new notification!");
+    const data = JSON.parse(e.data);
+    notification.style.opacity = 1;
+    notificationText.innerHTML = `You received ${data.amount}dkk from bank account nr ${data.sender}`;
+  };
+
+  // close notification
+  notificationCloseButton.addEventListener("click", () => {
+    notification.style.opacity = 0;
+  });
+
+  // when the socket closed
+  chatSocket.onclose = function (e) {
+    console.error("Chat socket closed unexpectedly");
+  };
+</script>
+
 {% endblock %}
