@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from banking_app.models import Account, Ledger
 
+# transform specified fields into JSON
+
 class AccountSerialzer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'customer', 'account_type',)

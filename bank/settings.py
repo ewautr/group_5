@@ -71,8 +71,9 @@ RQ_QUEUES = {
    }
 }
 
-# for channels
+# for channels: point Channels at the root routing configuration
 ASGI_APPLICATION = 'bank.asgi.application'
+# configuring the channel layer
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',

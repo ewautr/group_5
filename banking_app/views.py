@@ -20,6 +20,7 @@ import uuid
 @login_required
 @otp_required
 def index(request):
+    # display the right index for emoloyee and customer
     if is_employee(request.user):
         customers = Customer.objects.all()
         accounts = Account.objects.all()
@@ -90,6 +91,7 @@ def transfers(request, account_id):
         'allAccounts': allAccounts
     }
     if request.method == 'POST':
+        # make an internal transfer 
         amount = request.POST['amount']
         debit_account = request.POST['fromAccount']
         credit_account = request.POST['toAccount']
@@ -97,9 +99,11 @@ def transfers(request, account_id):
         available_balance = currentAccount.balance
 
         if available_balance >= int(amount):
+            # go forward only if the user has sufficient funds
             Ledger.transaction(int(amount), debit_account, credit_account, text)
             return redirect('banking_app:index')
         else:
+            # go back and display error
             context = {
                 'currentAccount': currentAccount,
                 'allAccounts': allAccounts,
@@ -183,6 +187,8 @@ def add_loan(request, customer_id):
         'customer': customer,
         'customerAccounts': customerAccounts
     }
+
+    # customer is taking a loan
     if request.method == 'POST':
         # Create the account
         account = Account()
@@ -190,7 +196,7 @@ def add_loan(request, customer_id):
         account.account_type = 'Loan'
         account.save()
 
-        # Make a ledger where we take 500 from the loan account and add 500 to the chosen account
+        # Make a ledger where we take amount from the loan account and add it to the chosen account
         amount = request.POST['amount']
         debit_account = account.pk
         credit_account = request.POST['toAccount']
@@ -224,13 +230,16 @@ def pay_loan(request, customer_id, account_id):
         available_balance = selectedAccount.balance
 
         if available_balance >= int(amount) and int(amount) <= -account.balance:
+            # make a transaction from customer's account to the loan account
             Ledger.transaction(int(amount), debit_account, credit_account, text)
             
+            # if the loan is payed off fully - delete it
             if account.balance == 0:
                 account.delete()
 
             return redirect('banking_app:index')
         elif int(amount) > -account.balance:
+        # check if the user is not paying too much for the loan
             context = {
                 'customer': customer,
                 'customerAccounts': customerAccounts,

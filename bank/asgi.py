@@ -16,6 +16,7 @@ import banking_app.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bank.settings')
 
+# root routing configuration for Channels
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
