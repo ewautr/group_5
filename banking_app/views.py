@@ -74,6 +74,8 @@ def send_statement(request, account_id):
         'activities': activities,
     })
 
+    return redirect('banking_app:LogoutView')
+
     return render(request, 'banking_app/activity.html', context)
 
 # Customer view - transfering money

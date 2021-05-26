@@ -12,13 +12,13 @@ def email_message(message_dict):
    """
    print(message_dict)
 
-   send_mail(
-      'Activate your account',
-      contents,
-      'nata2653@stud.kea.dk',
-      [message_dict['email']],
-      fail_silently=False
-   )
+#    send_mail(
+#       'Activate your account',
+#       contents,
+#       'nata2653@stud.kea.dk',
+#       [message_dict['email']],
+#       fail_silently=False
+#    )
 
 def email_statement(message_dict):
     statements = []
