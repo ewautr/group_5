@@ -69,6 +69,8 @@ def send_statement(request, account_id):
     }
     print(activities)
 
+    # Send email with account statements to user 
+    # rq_worker will pass on relevant information to messaing.py file
     django_rq.enqueue(email_statement, {
         'user_email': user_email,
         'activities': activities,
@@ -278,6 +280,8 @@ def add_customer(request):
         customer.rank = rank
         customer.save()
 
+        # Send email with credentials to new user 
+        # rq_worker will pass on relevant information to messaing.py file
         django_rq.enqueue(email_message, {
             'email' : customer.user.email,
             'username': customer.user.username,
