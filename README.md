@@ -35,3 +35,7 @@ Once a user is categorized as 'staff', they are granted access to an employee vi
 ## Customer's View
 
 If a user does not belong to a staff, they are directed to a customer's dashboard. From there, it is possible to view all accounts that belong to the logged in customer and their activity, manage loans, make transfers to local for foregn banks.
+
+## External ransfers
+
+In order to test a functionality of sending transfers to another banks, make sure to simulate anothe bank's instance by running a copy of the project on a `0.0.0.0:8003` server
