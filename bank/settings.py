@@ -53,15 +53,17 @@ INSTALLED_APPS = [
     # channels
     'channels',
 
-    #two factor auth
+    # two factor auth
     'django_otp',
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
     'two_factor',
+
+    # rqworker and filters
     'django_rq',
     'django_filters',
 ]
-
+# Configure RQ qorkers with infomation about Redis server
 RQ_QUEUES = {
    'default': {
       'HOST': 'localhost',
@@ -83,10 +85,9 @@ CHANNEL_LAYERS = {
     },
 }
 
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
-# EMAIL_USE_SSL = False
 EMAIL_HOST = 'smtp-relay.sendinblue.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'ewax0437@stud.kea.dk'
@@ -186,6 +187,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
@@ -194,8 +196,9 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
+# For 2FA - Defining login and logout pages
 LOGIN_URL = 'two_factor:login'
-# LOGIN_REDIRECT_URL = 'banking_app:redirect_customer'
+
 LOGIN_REDIRECT_URL = 'banking_app:index'
 
 LOGOUT_REDIRECT_URL = 'two_factor:login'

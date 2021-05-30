@@ -1,5 +1,8 @@
 from django.core.mail import send_mail
 
+# Function that send user credentials to new user
+# send_mail function is commented out due to ban from sendinblue.com
+# and the function will therefore not send an actual email
 def email_message(message_dict):
    contents = f"""
    Welcome! You have been created as a customer for NES Bank. Click the following link and insert your credentials in order to activate your account.
@@ -12,14 +15,17 @@ def email_message(message_dict):
    """
    print(message_dict)
 
-   send_mail(
-      'Activate your account',
-      contents,
-      'nata2653@stud.kea.dk',
-      [message_dict['email']],
-      fail_silently=False
-   )
+#    send_mail(
+#       'Activate your account',
+#       contents,
+#       'nata2653@stud.kea.dk',
+#       [message_dict['email']],
+#       fail_silently=False
+#    )
 
+# Function that send account statement to user
+# send_mail function is commented out due to ban from sendinblue.com
+# and the function will therefore not send an actual email
 def email_statement(message_dict):
     statements = []
     activities = message_dict['activities']
