@@ -1,8 +1,10 @@
+"""consumers.py"""
 import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 
 class NotificationConsumer(WebsocketConsumer):
+    """Notification function"""
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'notifications_%s' % self.room_name
@@ -40,6 +42,7 @@ class NotificationConsumer(WebsocketConsumer):
 
     # Receive message from room group
     def notification(self, event):
+        """Receive notification"""
         sender = event['sender']
         amount = event['amount']
 

@@ -202,3 +202,6 @@ LOGIN_URL = 'two_factor:login'
 LOGIN_REDIRECT_URL = 'banking_app:index'
 
 LOGOUT_REDIRECT_URL = 'two_factor:login'
+
+# Installing pylint-django on correct path
+DJANGO_SETTINGS_MODULE='bank.settings pylint --load-plugins pylint_django banking_app/'

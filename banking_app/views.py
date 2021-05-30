@@ -1,25 +1,27 @@
+"""views.py"""
+import uuid
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Ledger, Customer, Account
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth.models import User
-from .utils import is_employee
 from django_otp.decorators import otp_required
 from django.contrib.auth import logout as dj_logout
+from django.core import serializers
 import django_rq
+import requests
+from .models import Ledger, Customer, Account
+from .utils import is_employee
 from . messaging import email_message
 from . messaging import email_statement
-from django.core import serializers
 from .filters import LedgerFilter
-import requests
-import uuid
 
 
 # Customer and Employee view
 @login_required
 @otp_required
 def index(request):
+    """Showing index page"""
     # display the right index for emoloyee and customer
     if is_employee(request.user):
         customers = Customer.objects.all()
@@ -36,16 +38,18 @@ def index(request):
     return render(request, 'banking_app/index.html', context)
 
 def LogoutView(request):
-   dj_logout(request)
-   return redirect('two_factor:login')
+    """View for logout"""
+    dj_logout(request)
+    return redirect('two_factor:login')
 
 # Customer view - account activity
 @login_required
 @otp_required
 def activity(request, account_id):
+    """View for activity"""
     assert not is_employee(request.user)
     activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
-    
+
     myFilter = LedgerFilter(request.GET, queryset=activities)
     activities = myFilter.qs
 
@@ -59,6 +63,7 @@ def activity(request, account_id):
 @login_required
 @otp_required
 def send_statement(request, account_id):
+    """View for send statement"""
     assert not is_employee(request.user)
     user_email = request.user.email
     activities = Ledger.objects.filter(account=account_id).order_by('-timestamp')
@@ -70,7 +75,7 @@ def send_statement(request, account_id):
     }
     print(activities)
 
-    # Send email with account statements to user 
+    # Send email with account statements to user
     # rq_worker will pass on relevant information to messaing.py file
     django_rq.enqueue(email_statement, {
         'user_email': user_email,
@@ -85,6 +90,7 @@ def send_statement(request, account_id):
 @login_required
 @otp_required
 def transfers(request, account_id):
+    """View for transfers"""
     assert not is_employee(request.user)
     currentAccount = get_object_or_404(Account, pk=account_id)
     available_balance = currentAccount.balance
@@ -95,7 +101,7 @@ def transfers(request, account_id):
         'allAccounts': allAccounts
     }
     if request.method == 'POST':
-        # make an internal transfer 
+        # make an internal transfer
         amount = request.POST['amount']
         debit_account = request.POST['fromAccount']
         credit_account = request.POST['toAccount']
@@ -120,11 +126,12 @@ def transfers(request, account_id):
 @login_required
 @otp_required
 def external_transfer(request, account_id):
+    """View for external transfers"""
     assert not is_employee(request.user)
 
     currentAccount = get_object_or_404(Account, pk=account_id)
     allAccounts = Account.objects.exclude(pk=account_id)
-    
+
     amount = request.POST['amount']
     debit_account = request.POST['fromAccount']
     bank_iban = request.POST['toBank']
@@ -139,7 +146,7 @@ def external_transfer(request, account_id):
         response = requests.post('http://127.0.0.1:8003/api/v1/rest-auth/login/', data={'username': 'Bank 8000', 'password': 'pass1'})
         api_key = response.json()['key']
 
-        # check if the recipient exists 
+        # check if the recipient exists
         response = requests.get(f'http://127.0.0.1:8003/api/v1/{credit_account}', headers={'Authorization': f'Token {api_key}'})
         if response.status_code == 404:
             context = {
@@ -148,7 +155,7 @@ def external_transfer(request, account_id):
                 'error': 'account does not exist'
             }
             return render(request, 'banking_app/transfers.html', context)
-        
+
         # http request with data for two new instances in the ledger table
         ledger_row_1 = {
             "transaction_id": transaction_id,
@@ -164,8 +171,8 @@ def external_transfer(request, account_id):
         }
         response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_1)
         response = requests.post('http://127.0.0.1:8003/api/v1/ledger/', headers={'Authorization': f'Token {api_key}'}, data=ledger_row_2)
-        
-        # if response is okay proceed with making a ledger instance in the current bank 
+
+        # if response is okay proceed with making a ledger instance in the current bank
         if response.status_code == 201:
             Ledger.transaction(int(amount), debit_account, bank_iban, text)
 
@@ -176,7 +183,7 @@ def external_transfer(request, account_id):
             'allAccounts': allAccounts,
             'error': 'insufficient funds'
         }
-    
+
     return render(request, 'banking_app/transfers.html', context)
 
 
@@ -184,6 +191,7 @@ def external_transfer(request, account_id):
 @login_required
 @otp_required
 def add_loan(request, customer_id):
+    """View for adding a loan"""
     assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     customerAccounts = Account.objects.filter(customer=customer).filter(account_type='bank account')
@@ -215,6 +223,7 @@ def add_loan(request, customer_id):
 @login_required
 @otp_required
 def pay_loan(request, customer_id, account_id):
+    """View for paying off loan"""
     assert not is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     account = get_object_or_404(Account, pk=account_id)
@@ -236,7 +245,7 @@ def pay_loan(request, customer_id, account_id):
         if available_balance >= int(amount) and int(amount) <= -account.balance:
             # make a transaction from customer's account to the loan account
             Ledger.transaction(int(amount), debit_account, credit_account, text)
-            
+
             # if the loan is payed off fully - delete it
             if account.balance == 0:
                 account.delete()
@@ -263,7 +272,8 @@ def pay_loan(request, customer_id, account_id):
 # Employee view - adding a new customer
 @login_required
 @otp_required
-def add_customer(request): 
+def add_customer(request):
+    """View for adding a customer, containing rqworker for sending email"""
     assert is_employee(request.user)
     context = {}
 
@@ -289,7 +299,7 @@ def add_customer(request):
         customer.rank = rank
         customer.save()
 
-        # Send email with credentials to new user 
+        # Send email with credentials to new user
         # rq_worker will pass on relevant information to messaing.py file
         django_rq.enqueue(email_message, {
             'email' : customer.user.email,
@@ -303,6 +313,7 @@ def add_customer(request):
 @login_required
 @otp_required
 def edit_customer(request, customer_id):
+    """View for editing a customer"""
     assert is_employee(request.user)
     customer = get_object_or_404(Customer, pk=customer_id)
     context = { 'customer': customer }
@@ -322,6 +333,7 @@ def edit_customer(request, customer_id):
 @login_required
 @otp_required
 def add_account(request):
+    """Add new account view"""
     assert is_employee(request.user)
     customers = Customer.objects.all()
     context = {'customers': customers}
